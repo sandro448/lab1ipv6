@@ -1,9 +1,14 @@
-name: ipv6slaac
-mgmt:
-  network: lan
-  bridge: br-clab1
+name: ipv6slaac 
+
 topology:
-  nodes:
+  nodes: 
+    #Host linux
+    PC1:
+      kind: linux 
+      image: praqma/network-multitool:extra
+      exec:
+      - ip -6 route del default dev eth0
+  
     router1:
       kind: linux
       image: quay.io/frrouting/frr:8.4.1
@@ -13,24 +18,25 @@ topology:
       exec:
        - "sysctl -w net.ipv6.conf.all.forwarding=1"
 
+
+    router2:
+      kind: linux
+      image: quay.io/frrouting/frr:8.4.1
+      binds:
+        - router2/daemons:/etc/frr/daemons
+        - router2/frr.conf:/etc/frr/frr.conf
+      exec:
+       - "sysctl -w net.ipv6.conf.all.forwarding=1"
+
     
-    PC1:
+    PC2:
       kind: linux
       image: docker.io/esanchezv/kaliipv6v2:latest
       exec:
       - ip -6 route del default dev eth0
-          
-    PC3:
-      kind: linux
-      image: praqma/network-multitool:extra
-      exec:
-      - ip -6 route del default dev eth0
-      
 
-    br-clab1:
-      kind: bridge
        
   links:
-   - endpoints: ["br-clab1:eth1", "router1:eth1"]
-   - endpoints: ["br-clab1:eth2", "PC1:eth1"]
-   - endpoints: ["br-clab1:eth3", "PC3:eth1"]
+   - endpoints: ["PC1:eth1", "router1:eth1"] #No se puede usar eth 0  por que esta reservada, router o pc, se usa como dispositivo de administración 
+   - endpoints: ["router1:eth2", "router2:eth1"]
+   - endpoints: ["router2:eth2", "PC2:eth1"]
